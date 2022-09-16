@@ -22,7 +22,7 @@ snakemake --snakefile nogenome_protist.rules --configfile [config file] --cores 
 
 ## Database info
 
-This database contains a variable number of genes corresponding to <i> Chilomastix mesnili, Endolimax nana, Entamoeba coli, Entamoeba hartmanni, Enteromonas hominis, Iodamoeba sp., Cystoisospora belli, Pentatrichomonas hominis, Retortamonas sp., and Dientamoeba fragilis </i>, which as of fall 2022 don't have sequenced genomes deposited in NCBI. All of these are either gut commensals or of uncertain pathogenicity. Making the database involved downloading nucleotide sequences, de-deduplicating, and then using a number of methods to try to remove bacterial contamination (aligning simulated bacterial reads, aligning real gut metagenomic data and filtering out obviously spurious reads.
+This database contains a variable number of genes corresponding to <i> Chilomastix mesnili, Endolimax nana, Entamoeba coli, Entamoeba hartmanni, Enteromonas hominis, Iodamoeba sp., Cystoisospora belli, Pentatrichomonas hominis, Retortamonas sp., and Dientamoeba fragilis</i>, which as of September 2022 do not have sequenced genomes deposited in NCBI. All of these are either gut commensals or of uncertain pathogenicity. Making the database involved downloading nucleotide sequences, de-deduplicating, and then using a number of methods to try to remove bacterial contamination (aligning simulated bacterial reads, aligning real gut metagenomic data and filtering out obviously spurious reads).
 
 Caveats:
 - I cannot guarantee there is no possibility bacterial-derived sequences will align to this database
