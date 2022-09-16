@@ -1,0 +1,160 @@
+#Author Abigail Lind - github allind
+#run options:
+#runall (runs all)
+#printaln (prints aln cmds)
+#aln (just runs aln)
+#filter (assumes aln step finished)
+
+
+#targets
+
+rule runall:
+	input:
+		expand("{output_dir}/{sample}_aln_q30_lenfilter.sorted.bam", sample=config["samples"], output_dir=config["output_dir"]),
+		expand("{output_dir}/{sample}_aln_q30_lenfilter_dupfilter.sorted.bam", sample=config["samples"], output_dir=config["output_dir"]),
+		expand("{output_dir}/{sample}_aln_q30_lenfilter_dupfilter.sorted.bam.bai", sample=config["samples"], output_dir=config["output_dir"]),
+		expand("{output_dir}/{sample}_read_counts_and_mismatches.txt", sample=config["samples"], output_dir=config["output_dir"])#, 
+		#expand("{output_dir}/{sample}_all_hits_table.txt", sample=config["samples"], output_dir=config["output_dir"])
+
+
+
+rule aln:
+	input:
+		expand("{output_dir}/{sample}_aln_q30_lenfilter.sorted.bam", sample=config["samples"], output_dir=config["output_dir"])
+
+rule filter:
+	input:
+		expand("{output_dir}/{sample}_aln_q30_lenfilter_dupfilter.sorted.bam", sample=config["samples"], output_dir=config["output_dir"]),
+		expand("{output_dir}/{sample}_aln_q30_lenfilter_dupfilter.sorted.bam.bai", sample=config["samples"], output_dir=config["output_dir"]),
+		expand("{output_dir}/{sample}_read_counts_and_mismatches.txt", sample=config["samples"], output_dir=config["output_dir"])#, 
+		#expand("{output_dir}/{sample}_all_hits_table.txt", sample=config["samples"], output_dir=config["output_dir"])
+
+#rules
+
+rule alncmd:
+	input:
+		db = expand("{database_dir}/{db}", database_dir=config["database_dir"], db=config["database_prefix"]),
+		r1 = expand("{fq_dir}/{sample}{fwd_suffix}", fq_dir=config["fq_dir"], sample=config["samples"], fwd_suffix=config["fwd_suffix"]) if config["paired_end"] else expand("{fq_dir}/{{sample}}{se_suffix}", fq_dir=config["fq_dir"], se_suffix=config["se_suffix"]),
+		r2 = expand("{fq_dir}/{sample}{rev_suffix}", fq_dir=config["fq_dir"], sample=config["samples"], rev_suffix=config["rev_suffix"]) if config["paired_end"] else expand("{fq_dir}/{{sample}}{se_suffix}", fq_dir=config["fq_dir"], se_suffix=config["se_suffix"])
+	output:
+		expand("{output_dir}/alignment_commands.txt", output_dir=config["output_dir"])
+
+	params:
+		bam = expand("{output_dir}/{sample}_aln_q30_lenfilter.sorted.bam", output_dir=config["output_dir"], sample=config["samples"])
+	run:
+
+
+		readlen=config["readlen"]
+		minreadlen = int(round(readlen * 0.8, 0))
+
+
+		if minreadlen < 60:
+			minreadlen = 60
+
+		if config["paired_end"]:
+			shell("""echo bowtie2 --quiet --omit-sec-seq --no-discordant --no-unal -x {input.db} -1 {input.r1} -2	{input.r2} \| """
+			"" "perl -lane {{'}}$l =0; $F[5] =~ s/(\d+)[MX=DN]/$l+=$1/eg; print if $l > {minreadlen} or /^@/{{'}} \| """
+			"""samtools view -q 30 -bS - \| """
+			"""samtools sort -o {params.bam} -  >> {output}""")
+		else:
+			shell("echo bowtie2 --quiet --omit-sec-seq --no-discordant --no-unal -x {input.db} -U {input.r1} \| "
+			"perl -lane {{\'}}$l = 0; $F[5] =~ s/(\d+)[MX=DN]/$l+=$1/eg; print if $l > {minreadlen} or /^@/{{\'}} \| "
+			"samtools view -q 30 -bS - \| "
+			"samtools sort -o {params.bam} - >> {output}")
+
+
+rule runaln:
+	input:
+		db = expand("{database_dir}/{db}", database_dir=config["database_dir"], db=config["database_prefix"]),
+		r1 = expand("{fq_dir}/{{sample}}{fwd_suffix}", fq_dir=config["fq_dir"], fwd_suffix=config["fwd_suffix"]) if config["paired_end"] else expand("{fq_dir}/{{sample}}{se_suffix}", fq_dir=config["fq_dir"], se_suffix=config["se_suffix"]),
+		r2 = expand("{fq_dir}/{{sample}}{rev_suffix}", fq_dir=config["fq_dir"], rev_suffix=config["rev_suffix"]) if config["paired_end"] else expand("{fq_dir}/{{sample}}{se_suffix}", fq_dir=config["fq_dir"], se_suffix=config["se_suffix"])
+	output:
+		bam = "{output_dir}/{sample}_aln_q30_lenfilter.sorted.bam"
+	run:
+		readlen=config["readlen"]
+		minreadlen = round(readlen * 0.8, 0)
+		if minreadlen < 60:
+			minreadlen = 60
+		if config["paired_end"]:
+			shell("bowtie2 --quiet --omit-sec-seq --no-discordant --no-unal -x {input.db} -1 {input.r1} -2	{input.r2} | "
+			"perl -lane '$l = 0; $F[5] =~ s/(\d+)[MX=DN]/$l+=$1/eg; print if $l > {minreadlen} or /^@/' | "
+			"samtools view -q 30 -bS - | "
+			"samtools sort -o {output.bam} - ")
+		else:
+			shell("bowtie2 --quiet --omit-sec-seq --no-discordant --no-unal -x {input.db} -U {input.r1} | "
+			"perl -lane '$l = 0; $F[5] =~ s/(\d+)[MX=DN]/$l+=$1/eg; print if $l > {minreadlen} or /^@/' | "
+			"samtools view -q 30 -bS - | "
+			"samtools sort -o {output.bam} - ")
+
+
+rule bam2fastq:
+	input:
+		bam = "{output_dir}/{sample}_aln_q30_lenfilter.sorted.bam"
+	output:
+		temp("{output_dir}/{sample}_aln_q30_lenfilter.fq")
+	shell:
+		"""
+		bedtools bamtofastq -i {input.bam} -fq {output}
+		"""
+
+rule fixmate:
+	input:
+		inbam = "{output_dir}/{sample}_aln_q30_lenfilter.sorted.bam"
+	output:
+		temp("{output_dir}/{sample}_aln_q30_lenfilter_fixmate.bam")
+	shell:
+		"""
+		samtools sort -n {input.inbam} | samtools fixmate -m - {output}
+
+		"""
+rule markdup:
+	input:
+		"{output_dir}/{sample}_aln_q30_lenfilter_fixmate.bam"
+	output:
+		temp("{output_dir}/{sample}_aln_q30_lenfilter_rmdup.bam")
+	shell:
+		"""
+		samtools sort {input} | samtools markdup -r -s - {output}
+
+		"""
+rule rmsort:
+	input:
+		"{output_dir}/{sample}_aln_q30_lenfilter_rmdup.bam"
+	output:
+		"{output_dir}/{sample}_aln_q30_lenfilter_dupfilter.sorted.bam"
+
+	shell:
+		"""
+		samtools sort -o {output} {input}
+		"""	
+
+rule index:
+	input:
+		bam = "{output_dir}/{sample}_aln_q30_lenfilter_dupfilter.sorted.bam"
+	output:
+		bai = "{output_dir}/{sample}_aln_q30_lenfilter_dupfilter.sorted.bam.bai"
+		
+	shell:
+		"samtools index {input.bam} {output.bai}"
+
+rule countreads:
+	input:
+		bam = "{output_dir}/{sample}_aln_q30_lenfilter_dupfilter.sorted.bam",
+		bai = "{output_dir}/{sample}_aln_q30_lenfilter_dupfilter.sorted.bam.bai",
+		countscript = expand("{script_dir}/bam_to_pid.py", script_dir=config["script_dir"]),
+		ref = expand("{database_dir}/{db}", database_dir=config["database_dir"], db=config["database_prefix"])
+	output:
+		counts = "{output_dir}/{sample}_read_counts_and_mismatches.txt"
+	shell:
+		"python {input.countscript} {input.bam} {input.ref} > {output.counts}"
+
+#rule summarize: 
+#	input:
+#		counts = "{output_dir}/{sample}_read_counts_and_mismatches.txt",
+#		script = expand("{script_dir}/summarize_genes.py", script_dir=config["script_dir"]),
+#
+#	output:
+#		summary = "{output_dir}/{sample}_gene_count_summary.txt",
+#
+#	shell:
+#		"python {input.script} {input.counts} {output.summary}"

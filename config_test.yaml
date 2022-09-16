@@ -1,0 +1,16 @@
+
+
+#Universal options
+script_dir: "/path/to/repo"
+output_dir: "test"
+paired_end: true
+fwd_suffix: "_R1.fastq.gz"
+rev_suffix: "_R2.fastq.gz"
+se_suffix: ".fastq.gz"
+fq_dir: "/path/to/fastqdir"
+database_dir: "/path/to/nucleotidedir"
+database_prefix: "all_nucleotide_entry_longest_no_isospora.fna"
+readlen: 80 #or whatever your readlength is
+
+samples:
+    sample1: #or whatever your sample name is
