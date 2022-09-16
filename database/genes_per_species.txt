@@ -1,0 +1,11 @@
+Species	Genes
+Chilomastix_mesnili	7
+Endolimax_nana	3
+Entamoeba_coli	11
+Entamoeba_hartmanni	5
+Enteromonas_hominis	3
+Iodamoeba_sp.	10
+Cystoisospora_belli	4
+Pentatrichomonas_hominis	22
+Retortamonas_sp.	20
+Dientamoeba_fragilis	14
