@@ -1,5 +1,5 @@
 # gutprotist-search
-Snakemake workflow to search for gut protists without genomes in short read metagenomics data.
+Snakemake workflow to search for gut protists without genomes in short read metagenomics data. This is currently limited to Iodamoeba, Entamoeba coli, Dientamoeba fragilis, Isospora belli, Retortamonas, Pentatrichomonas hominis, Cystoisospora belli, Cystoisospora belli, Endolimax nana, Enteromonas hominis, Entamoeba hartmanni, and Chilomastix mesnili.
 
 This is an offshoot of EukDetect but is substantially less tested. A fairly substantial number of gut eukaryotes do not have sequenced genomes and are not detectable by EukDetect. To get around this, this tool uses a database of sequences deposited in NCBI for a set of given taxids. There is no way to use this quantitatively and this can be used only for presence/absence determination only. The database has been somewhat cleaned of bacterial sequence but it's not a guarantee that it's free of any contamination, and it's also not a guarantee that all of these sequences were correctly assigned by those who deposited them in NCBI.
 
