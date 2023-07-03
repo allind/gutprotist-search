@@ -11,6 +11,12 @@ Copy the `default_configfile.yml` to `your_configfile.yml`. Change all parameter
 
 If you don't know what the length of your reads is, this is a handy one-liner to estimate it: `gzip -dc {file.fastq.gz} | head -n 10000 | awk '{ if (NR%4==2){count++; bases += length}} END{printf "%3.0f\n", bases/count}'`
 
+**Activate the conda environment**
+
+This pipeline was devleoped alongside EukDetect. You can either install eukdetect completely as described in the [github](https://github.com/allind/EukDetect) or just the conda environment. Regardless, you need to activate the environment.
+
+`conda activate eukdetect`
+
 **Run snakemake directly**
 
 This is a snakemake worflow. Options for running are `runall`, `aln`, or `filter` as the target rule.
